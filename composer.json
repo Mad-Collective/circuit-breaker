@@ -1,0 +1,14 @@
+{
+    "name": "pluggit/circuit-breaker",
+    "description": "A library to provide circuit breaker classes",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alfons Foubert",
+            "email": "alfons.foubert@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
