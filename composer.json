@@ -16,7 +16,7 @@
     },
     "require-dev": {
         "phpspec/phpspec": "^3.2",
-        "phpunit/php-code-coverage": "^4.0",
+        "phpunit/php-code-coverage": "^4.0"
     },
     "autoload": {
         "psr-4": {
