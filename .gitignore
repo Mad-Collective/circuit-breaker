@@ -1,0 +1,6 @@
+# Library
+vendor/
+composer.lock
+
+# Development
+.idea/

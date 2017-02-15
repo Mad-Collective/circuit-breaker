@@ -10,5 +10,16 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require": {
+        "psr/log": "^1.0",
+        "psr/simple-cache": "^1.0"
+    },
+    "require-dev": {
+        "phpspec/phpspec": "^3.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cmp\\CircuitBreaker\\" : "src/"
+        }
+    }
 }
