@@ -15,7 +15,7 @@
         "psr/simple-cache": "^1.0"
     },
     "require-dev": {
-        "phpspec/phpspec": "^3.2",
+        "phpspec/phpspec": "^2.5",
         "phpunit/php-code-coverage": "^4.0"
     },
     "autoload": {
