@@ -16,21 +16,25 @@ class CircuitBreaker
 {
     protected $cache;
     protected $logger;
-    protected $services = array();
+    protected $timeFactory;
+    protected $services    = array();
     protected $cachePrefix = 'cb';
-    protected $ttl = 3360;
+    protected $ttl         = 3360;
 
     /**
      * CircuitBreaker constructor.
      * @param CacheInterface $cache
      * @param LoggerInterface|null $logger
+     * @param TimeFactory|null $timeFactory
      */
     public function __construct(
         CacheInterface $cache,
-        LoggerInterface $logger = null
+        LoggerInterface $logger  = null,
+        TimeFactory $timeFactory = null
     ){
-        $this->cache  = $cache;
-        $this->logger = $logger instanceof LoggerInterface ? $logger : new NullLogger();
+        $this->cache       = $cache;
+        $this->logger      = $logger instanceof LoggerInterface  ? $logger      : new NullLogger();
+        $this->timeFactory = $timeFactory instanceof TimeFactory ? $timeFactory : new TimeFactory();
     }
 
     /**
@@ -81,7 +85,7 @@ class CircuitBreaker
     protected function setFailures( $serviceName, $newValue )
     {
         $this->cache->set( $this->getCacheKey($serviceName, 'failures'), $newValue, $this->ttl );
-        $this->cache->set( $this->getCacheKey($serviceName, 'lastTest'), time(),    $this->ttl );
+        $this->cache->set( $this->getCacheKey($serviceName, 'lastTest'), $this->timeFactory->time(),    $this->ttl );
     }
 
     /**
@@ -90,7 +94,7 @@ class CircuitBreaker
      */
     public function trackService( Service $service )
     {
-        if ($this->getService($service) !== null)
+        if ($this->getService($service->getName()) !== null)
         {
             throw new ServiceAlreadyTrackedException( $service->getName() );
         }
@@ -107,13 +111,12 @@ class CircuitBreaker
         $service = $this->getService( $serviceName );
         if ( $service == null )
         {
-            throw new ServiceNotTrackedException( $service->getName() );
+            throw new ServiceNotTrackedException( $serviceName );
         }
 
         $failures    = $this->getFailures( $serviceName );
         $maxFailures = $service->getMaxFailures();
 
-        // Service is available
         if ($failures < $maxFailures)
         {
             return true;
@@ -122,14 +125,13 @@ class CircuitBreaker
         $lastTest     = $this->getLastTest( $serviceName );
         $retryTimeout = $service->getRetryTimeout();
 
-        // Try the service one more time
-        if ( ($lastTest + $retryTimeout) < time())
+        if ( ($lastTest + $retryTimeout) < $this->timeFactory->time())
         {
             $this->setFailures($serviceName, $failures);
+            $this->logger->info('Attempting service ' . $serviceName . ' one more time');
             return true;
         }
 
-        // Service down
         return false;
     }
 
@@ -139,7 +141,6 @@ class CircuitBreaker
      */
     public function reportFailure($serviceName )
     {
-        // Check if we're tracking the service
         if ( $this->getService( $serviceName ) == null )
         {
             throw new ServiceNotTrackedException( $serviceName );
@@ -155,7 +156,6 @@ class CircuitBreaker
      */
     public function reportSuccess($serviceName )
     {
-        // Check that we're tracking the service
         $service = $this->getService( $serviceName );
         if ( $service == null )
         {

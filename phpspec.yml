@@ -1,0 +1,10 @@
+formatter.name: pretty
+rerunner:
+  path: vendor/bin/phpspec
+  commands: [describe]
+
+suites:
+  circuit-breaker:
+    spec_path: ./tests/
+    namespace: Cmp\CircuitBreaker
+    psr4_prefix: Cmp\CircuitBreaker

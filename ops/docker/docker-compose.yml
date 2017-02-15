@@ -1,0 +1,23 @@
+version: '2'
+
+services:
+  php7:
+    build: ./7
+    volumes:
+      - ../../:/app/circuit-breaker
+    working_dir: /app/circuit-breaker
+    command: make test
+
+  php56:
+      build: ./56
+      volumes:
+        - ../../:/app/circuit-breaker
+      working_dir: /app/circuit-breaker
+      command: make test
+
+  php55:
+      build: ./55
+      volumes:
+        - ../../:/app/circuit-breaker
+      working_dir: /app/circuit-breaker
+      command: make test
