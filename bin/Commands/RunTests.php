@@ -1,12 +1,11 @@
 <?php
 
-namespace bin\Cmp\CircuitBreaker\Commands;
+namespace bin\Cmp\Monitoring\Commands;
 
+use PHP_CodeCoverage;
+use PHP_CodeCoverage_Filter;
+use PHP_CodeCoverage_Report_Clover;
 use PhpSpec\Console\Application;
-use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\Report\Clover;
-use SebastianBergmann\CodeCoverage\Report\Html\Facade;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
 use Symfony\Component\Console\Input\ArgvInput;
@@ -54,7 +53,7 @@ class RunTests extends Command
             throw new InvalidArgumentException("The only valid formats are clover or html");
         }
 
-        $coverage = new CodeCoverage(null, $this->getFilter());
+        $coverage = new PHP_CodeCoverage(null, $this->getFilter());
         $coverage->start('<tests>');
 
         $this->runPhpSpec();
@@ -73,22 +72,22 @@ class RunTests extends Command
     /**
      * Writes the clover report
      *
-     * @param CodeCoverage $coverage
+     * @param PHP_CodeCoverage $coverage
      */
-    private function writeCloverReport(CodeCoverage $coverage)
+    private function writeCloverReport(PHP_CodeCoverage $coverage)
     {
-        $writer = new Clover();
+        $writer = new PHP_CodeCoverage_Report_Clover();
         $writer->process($coverage, $this->getPath('clover.xml'));
     }
 
     /**
      * Writes the html report
      *
-     * @param CodeCoverage $coverage
+     * @param PHP_CodeCoverage $coverage
      */
-    private function writeHtmlReport(CodeCoverage $coverage)
+    private function writeHtmlReport(PHP_CodeCoverage $coverage)
     {
-        $writer = new Facade();
+        $writer = new \PHP_CodeCoverage_Report_HTML();
         $writer->process($coverage, $this->getPath('code-coverage'));
     }
 
@@ -105,12 +104,16 @@ class RunTests extends Command
     }
 
     /**
-     * @return Filter
+     * @return PHP_CodeCoverage_Filter
      */
     private function getFilter()
     {
-        $filter = new Filter();
+        $filter = new PHP_CodeCoverage_Filter();
         $filter->addDirectoryToWhitelist('src');
+        $filter->addDirectoryToBlacklist('spec');
+        $filter->addDirectoryToBlacklist('bin');
+        $filter->addDirectoryToBlacklist('vendor');
+
         return $filter;
     }
 
