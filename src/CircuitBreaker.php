@@ -169,7 +169,7 @@ class CircuitBreaker
     {
         $service = $this->getService($serviceName);
         if ($service == null) {
-            throw new ServiceNotTrackedException($service->getName());
+            throw new ServiceNotTrackedException($serviceName);
         }
 
         $failures    = $this->getFailures($serviceName);
