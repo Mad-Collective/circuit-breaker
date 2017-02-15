@@ -32,4 +32,4 @@ logs:
 tag: # List last tag for this repo
 	@git tag -l | sort -r |head -1
 
-restart: nodev dev
+restart: nodev devgit status
