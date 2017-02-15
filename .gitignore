@@ -6,3 +6,4 @@ bin/clover.xml
 
 # Development
 .idea/
+.DS_Store
