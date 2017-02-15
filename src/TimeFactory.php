@@ -4,6 +4,7 @@ namespace Cmp\CircuitBreaker;
 
 /**
  * Class TimeFactory
+ *
  * @package Cmp\CircuitBreaker
  */
 class TimeFactory

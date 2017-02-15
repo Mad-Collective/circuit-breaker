@@ -10,125 +10,135 @@ use Psr\Log\NullLogger;
 
 /**
  * Class CircuitBreaker
+ *
  * @package Cmp\CircuitBreaker
  */
 class CircuitBreaker
 {
     protected $cache;
+
     protected $logger;
+
     protected $timeFactory;
-    protected $services    = array();
+
+    protected $services    = [];
+
     protected $cachePrefix = 'cb';
+
     protected $ttl         = 3360;
 
     /**
      * CircuitBreaker constructor.
-     * @param CacheInterface $cache
-     * @param LoggerInterface|null $logger
-     * @param TimeFactory|null $timeFactory
+     *
+     * @param CacheInterface       $cache       Cache to store the failures and times
+     * @param LoggerInterface|null $logger      To log stuff
+     * @param TimeFactory|null     $timeFactory Time Factory to mock the class
      */
     public function __construct(
         CacheInterface $cache,
-        LoggerInterface $logger  = null,
+        LoggerInterface $logger = null,
         TimeFactory $timeFactory = null
-    ){
+    ) {
         $this->cache       = $cache;
-        $this->logger      = $logger instanceof LoggerInterface  ? $logger      : new NullLogger();
+        $this->logger      = $logger instanceof LoggerInterface ? $logger : new NullLogger();
         $this->timeFactory = $timeFactory instanceof TimeFactory ? $timeFactory : new TimeFactory();
     }
 
     /**
-     * @param $serviceName
-     * @param $field
+     * @param string $serviceName Name of the service
+     * @param string $field       Field you want to fetch
+     *
      * @return string
      */
-    protected function getCacheKey($serviceName, $field )
+    protected function getCacheKey($serviceName, $field)
     {
-        return $this->cachePrefix . '-' . $serviceName . '-' . $field;
+        return $this->cachePrefix.'-'.$serviceName.'-'.$field;
     }
 
     /**
-     * @param $serviceName
-     * @return mixed|null
+     * @param string $serviceName Name of the service
+     *
+     * @return Service|null
      */
-    protected function getService( $serviceName )
+    protected function getService($serviceName)
     {
-        if (array_key_exists($serviceName, $this->services))
-        {
+        if (array_key_exists($serviceName, $this->services)) {
             return $this->services[$serviceName];
         }
+
         return null;
     }
 
     /**
-     * @param $serviceName
+     * @param string $serviceName Name of the service
+     *
      * @return int
      */
-    protected function getFailures( $serviceName )
+    protected function getFailures($serviceName)
     {
-        return (int) $this->cache->get( $this->getCacheKey($serviceName, 'failures') );
+        return (int)$this->cache->get($this->getCacheKey($serviceName, 'failures'));
     }
 
     /**
-     * @param $serviceName
+     * @param string $serviceName Name of the service
+     *
      * @return int
      */
-    protected function getLastTest( $serviceName )
+    protected function getLastTest($serviceName)
     {
-        return (int) $this->cache->get( $this->getCacheKey($serviceName, 'lastTest') );
+        return (int)$this->cache->get($this->getCacheKey($serviceName, 'lastTest'));
     }
 
     /**
-     * @param $serviceName
-     * @param $newValue
+     * @param string $serviceName Name of the service
+     * @param int    $newValue    New value to store
      */
-    protected function setFailures( $serviceName, $newValue )
+    protected function setFailures($serviceName, $newValue)
     {
-        $this->cache->set( $this->getCacheKey($serviceName, 'failures'), $newValue, $this->ttl );
-        $this->cache->set( $this->getCacheKey($serviceName, 'lastTest'), $this->timeFactory->time(),    $this->ttl );
+        $this->cache->set($this->getCacheKey($serviceName, 'failures'), $newValue, $this->ttl);
+        $this->cache->set($this->getCacheKey($serviceName, 'lastTest'), $this->timeFactory->time(), $this->ttl);
     }
 
     /**
-     * @param Service $service
+     * @param Service $service Service to track
+     *
      * @throws ServiceAlreadyTrackedException
      */
-    public function trackService( Service $service )
+    public function trackService(Service $service)
     {
-        if ($this->getService($service->getName()) !== null)
-        {
-            throw new ServiceAlreadyTrackedException( $service->getName() );
+        if ($this->getService($service->getName()) !== null) {
+            throw new ServiceAlreadyTrackedException($service->getName());
         }
         $this->services[$service->getName()] = $service;
     }
 
     /**
-     * @param $serviceName
+     * @param string $serviceName Name of the service
+     *
      * @return bool
      * @throws ServiceNotTrackedException
      */
-    public function isAvailable( $serviceName )
+    public function isAvailable($serviceName)
     {
-        $service = $this->getService( $serviceName );
-        if ( $service == null )
-        {
-            throw new ServiceNotTrackedException( $serviceName );
+        $service = $this->getService($serviceName);
+        if ($service == null) {
+            throw new ServiceNotTrackedException($serviceName);
         }
 
-        $failures    = $this->getFailures( $serviceName );
+        $failures    = $this->getFailures($serviceName);
         $maxFailures = $service->getMaxFailures();
 
-        if ($failures < $maxFailures)
-        {
+        if ($failures < $maxFailures) {
             return true;
         }
 
-        $lastTest     = $this->getLastTest( $serviceName );
+        $lastTest     = $this->getLastTest($serviceName);
         $retryTimeout = $service->getRetryTimeout();
 
-        if ( ($lastTest + $retryTimeout) < $this->timeFactory->time())
-        {
+        if (($lastTest + $retryTimeout) < $this->timeFactory->time()) {
             $this->setFailures($serviceName, $failures);
-            $this->logger->info('Attempting service ' . $serviceName . ' one more time');
+            $this->logger->info('Attempting service '.$serviceName.' one more time');
+
             return true;
         }
 
@@ -136,43 +146,40 @@ class CircuitBreaker
     }
 
     /**
-     * @param $serviceName
+     * @param string $serviceName Name of the service
+     *
      * @throws ServiceNotTrackedException
      */
-    public function reportFailure($serviceName )
+    public function reportFailure($serviceName)
     {
-        if ( $this->getService( $serviceName ) == null )
-        {
-            throw new ServiceNotTrackedException( $serviceName );
+        if ($this->getService($serviceName) == null) {
+            throw new ServiceNotTrackedException($serviceName);
         }
 
-        $this->setFailures( $serviceName, $this->getFailures($serviceName) + 1 );
-        $this->logger->warning('Service ' . $serviceName . ' is shaky');
+        $this->setFailures($serviceName, $this->getFailures($serviceName) + 1);
+        $this->logger->warning('Service '.$serviceName.' is shaky');
     }
 
     /**
-     * @param $serviceName
+     * @param string $serviceName Name of the service
+     *
      * @throws ServiceNotTrackedException
      */
-    public function reportSuccess($serviceName )
+    public function reportSuccess($serviceName)
     {
-        $service = $this->getService( $serviceName );
-        if ( $service == null )
-        {
-            throw new ServiceNotTrackedException( $service->getName() );
+        $service = $this->getService($serviceName);
+        if ($service == null) {
+            throw new ServiceNotTrackedException($service->getName());
         }
 
-        $failures    = $this->getFailures( $serviceName );
+        $failures    = $this->getFailures($serviceName);
         $maxFailures = $service->getMaxFailures();
 
-        if ( $failures > $maxFailures )
-        {
-            $this->setFailures( $serviceName, $maxFailures - 1 );
-            $this->logger->alert('Service ' . $serviceName . ' is down');
-        }
-        elseif( $failures > 0 )
-        {
-            $this->setFailures( $serviceName, $failures - 1 );
+        if ($failures > $maxFailures) {
+            $this->setFailures($serviceName, $maxFailures - 1);
+            $this->logger->alert('Service '.$serviceName.' is down');
+        } elseif ($failures > 0) {
+            $this->setFailures($serviceName, $failures - 1);
         }
     }
 }

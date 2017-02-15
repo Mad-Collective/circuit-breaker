@@ -1,4 +1,11 @@
 <?php
 namespace Cmp\CircuitBreaker\Exception;
 
-class ServiceNotTrackedException extends \Exception{}
+/**
+ * Class ServiceNotTrackedException
+ *
+ * @package Cmp\CircuitBreaker\Exception
+ */
+class ServiceNotTrackedException extends \Exception
+{
+}

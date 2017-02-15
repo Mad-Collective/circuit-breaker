@@ -2,17 +2,25 @@
 
 namespace Cmp\CircuitBreaker;
 
+/**
+ * Class Service
+ *
+ * @package Cmp\CircuitBreaker
+ */
 class Service
 {
     protected $name;
+
     protected $maxFailures;
+
     protected $retryTimeout;
 
     /**
      * Service constructor.
-     * @param string $name
-     * @param int $maxFailures
-     * @param int $retryTimeout
+     *
+     * @param string $name         Name of the service
+     * @param int    $maxFailures  Maximum numbers of allowed failures
+     * @param int    $retryTimeout Timeout to retry the service
      */
     public function __construct($name, $maxFailures = 20, $retryTimeout = 60)
     {
@@ -22,12 +30,11 @@ class Service
     }
 
     /**
-     * @param string $name
+     * @param string $name Name of the service
      */
     protected function setName($name)
     {
-        if ($name == '')
-        {
+        if ($name == '') {
             throw new \InvalidArgumentException('Service name can\'t be empty');
         }
 
