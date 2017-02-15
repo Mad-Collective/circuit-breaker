@@ -1,6 +1,6 @@
 <?php
 
-namespace bin\Cmp\Monitoring\Commands;
+namespace bin\Cmp\CircuitBreaker\Commands;
 
 use PHP_CodeCoverage;
 use PHP_CodeCoverage_Filter;
