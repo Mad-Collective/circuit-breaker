@@ -1,6 +1,8 @@
 # Library
 vendor/
 composer.lock
+bin/code-coverage/
+bin/clover.xml
 
 # Development
 .idea/
