@@ -76,7 +76,7 @@ class CircuitBreaker
      */
     protected function getFailures($serviceName)
     {
-        return (int)$this->cache->get($this->getCacheKey($serviceName, 'failures'));
+        return (int) $this->cache->get($this->getCacheKey($serviceName, 'failures'));
     }
 
     /**
@@ -86,7 +86,7 @@ class CircuitBreaker
      */
     protected function getLastTest($serviceName)
     {
-        return (int)$this->cache->get($this->getCacheKey($serviceName, 'lastTest'));
+        return (int) $this->cache->get($this->getCacheKey($serviceName, 'lastTest'));
     }
 
     /**

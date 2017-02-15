@@ -29,7 +29,7 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceAlreadyTrackedException')->during('trackService', [$service]);
     }
 
-    function it_should_throw_an_exception_if_the_service_is_not_tracked()
+    function it_should_throw_an_exception_if_the_service_is_not_tracked_in_is_available()
     {
         $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceNotTrackedException')->during('isAvailable', ['test']);
     }
@@ -58,5 +58,60 @@ class CircuitBreakerSpec extends ObjectBehavior
         $service = new Service('test', 20, 60);
         $this->trackService($service);
         $this->isAvailable('test')->shouldReturn(false);
+    }
+
+    function it_should_return_say_a_service_is_available_when_exceded_number_of_times_and_retry_time_has_passed(CacheInterface $cache, TimeFactory $timeFactory)
+    {
+        $cache->get('cb-test-failures')->willReturn(20);
+        $cache->get('cb-test-lastTest')->willReturn(20);
+        $cache->set('cb-test-failures', 20, 3360)->shouldBeCalled();
+        $cache->set('cb-test-lastTest', 100, 3360)->shouldBeCalled();
+        $timeFactory->time()->willReturn(100);
+        $service = new Service('test', 20, 60);
+        $this->trackService($service);
+        $this->isAvailable('test')->shouldReturn(true);
+    }
+
+    function it_should_throw_exception_in_report_failure_if_the_service_is_not_tracked()
+    {
+        $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceNotTrackedException')->during('reportFailure', ['test']);
+    }
+
+    function it_should_call_the_cache_when_reported_failure(CacheInterface $cache, TimeFactory $timeFactory)
+    {
+        $timeFactory->time()->willReturn(1000);
+        $cache->get('cb-test-failures')->willReturn(20);
+        $cache->set('cb-test-failures', 21, 3360)->shouldBeCalled();
+        $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
+        $service = new Service('test', 20, 60);
+        $this->trackService($service);
+        $this->reportFailure('test');
+    }
+
+    function it_should_throw_exception_in_report_success_if_the_service_is_not_tracked()
+    {
+        $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceNotTrackedException')->during('reportSuccess', ['test']);
+    }
+
+    function it_should_substract_a_failure_from_max(CacheInterface $cache, TimeFactory $timeFactory)
+    {
+        $timeFactory->time()->willReturn(1000);
+        $cache->get('cb-test-failures')->willReturn(21);
+        $cache->set('cb-test-failures', 19, 3360)->shouldBeCalled();
+        $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
+        $service = new Service('test', 20, 60);
+        $this->trackService($service);
+        $this->reportSuccess('test');
+    }
+
+    function it_should_substract_a_failure_from_current(CacheInterface $cache, TimeFactory $timeFactory)
+    {
+        $timeFactory->time()->willReturn(1000);
+        $cache->get('cb-test-failures')->willReturn(19);
+        $cache->set('cb-test-failures', 18, 3360)->shouldBeCalled();
+        $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
+        $service = new Service('test', 20, 60);
+        $this->trackService($service);
+        $this->reportSuccess('test');
     }
 }
