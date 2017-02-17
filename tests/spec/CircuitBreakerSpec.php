@@ -4,17 +4,17 @@ namespace spec\Cmp\CircuitBreaker;
 
 use Cmp\CircuitBreaker\CircuitBreaker;
 use Cmp\CircuitBreaker\Service;
-use Cmp\CircuitBreaker\TimeFactory;
 use PhpSpec\ObjectBehavior;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 
-
 class CircuitBreakerSpec extends ObjectBehavior
 {
-    function let(CacheInterface $cache, TimeFactory $timeFactory, LoggerInterface $logger)
+    public static $time;
+
+    function let(CacheInterface $cache, LoggerInterface $logger)
     {
-        $this->beConstructedWith($cache, $logger, $timeFactory);
+        $this->beConstructedWith($cache, $logger);
     }
 
     function it_is_initializable()
@@ -50,23 +50,23 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->isAvailable('test')->shouldReturn(true);
     }
 
-    function it_should_say_a_service_is_not_available_when_reported_enough_times(CacheInterface $cache, TimeFactory $timeFactory)
+    function it_should_say_a_service_is_not_available_when_reported_enough_times(CacheInterface $cache)
     {
         $cache->get('cb-test-failures')->willReturn(20);
         $cache->get('cb-test-lastTest')->willReturn(50);
-        $timeFactory->time()->willReturn(100);
+        CircuitBreakerSpec::$time = 100;
         $service = new Service('test', 20, 60);
         $this->trackService($service);
         $this->isAvailable('test')->shouldReturn(false);
     }
 
-    function it_should_return_say_a_service_is_available_when_exceded_number_of_times_and_retry_time_has_passed(CacheInterface $cache, TimeFactory $timeFactory)
+    function it_should_return_say_a_service_is_available_when_exceded_number_of_times_and_retry_time_has_passed(CacheInterface $cache)
     {
         $cache->get('cb-test-failures')->willReturn(20);
         $cache->get('cb-test-lastTest')->willReturn(20);
         $cache->set('cb-test-failures', 20, 3360)->shouldBeCalled();
         $cache->set('cb-test-lastTest', 100, 3360)->shouldBeCalled();
-        $timeFactory->time()->willReturn(100);
+        CircuitBreakerSpec::$time = 100;
         $service = new Service('test', 20, 60);
         $this->trackService($service);
         $this->isAvailable('test')->shouldReturn(true);
@@ -77,9 +77,9 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceNotTrackedException')->during('reportFailure', ['test']);
     }
 
-    function it_should_call_the_cache_when_reported_failure(CacheInterface $cache, TimeFactory $timeFactory)
+    function it_should_call_the_cache_when_reported_failure(CacheInterface $cache)
     {
-        $timeFactory->time()->willReturn(1000);
+        CircuitBreakerSpec::$time = 1000;
         $cache->get('cb-test-failures')->willReturn(20);
         $cache->set('cb-test-failures', 21, 3360)->shouldBeCalled();
         $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
@@ -93,9 +93,9 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->shouldThrow('\Cmp\CircuitBreaker\Exception\ServiceNotTrackedException')->during('reportSuccess', ['test']);
     }
 
-    function it_should_substract_a_failure_from_max(CacheInterface $cache, TimeFactory $timeFactory)
+    function it_should_substract_a_failure_from_max(CacheInterface $cache)
     {
-        $timeFactory->time()->willReturn(1000);
+        CircuitBreakerSpec::$time = 1000;
         $cache->get('cb-test-failures')->willReturn(21);
         $cache->set('cb-test-failures', 19, 3360)->shouldBeCalled();
         $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
@@ -104,9 +104,9 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->reportSuccess('test');
     }
 
-    function it_should_substract_a_failure_from_current(CacheInterface $cache, TimeFactory $timeFactory)
+    function it_should_substract_a_failure_from_current(CacheInterface $cache)
     {
-        $timeFactory->time()->willReturn(1000);
+        CircuitBreakerSpec::$time = 1000;
         $cache->get('cb-test-failures')->willReturn(19);
         $cache->set('cb-test-failures', 18, 3360)->shouldBeCalled();
         $cache->set('cb-test-lastTest', 1000, 3360)->shouldBeCalled();
@@ -114,4 +114,16 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->trackService($service);
         $this->reportSuccess('test');
     }
+}
+
+
+namespace Cmp\CircuitBreaker;
+
+/**
+ * Small hack to overwrite time function in the tested object namespace
+ * @return int
+ */
+function time()
+{
+    return \spec\Cmp\CircuitBreaker\CircuitBreakerSpec::$time ?: \time();
 }
