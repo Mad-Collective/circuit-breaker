@@ -12,6 +12,10 @@ class CircuitBreakerSpec extends ObjectBehavior
 {
     public static $time;
 
+    /**
+     * @param Psr\SimpleCache\CacheInterface $cache
+     * @param Psr\Log\LoggerInterface        $logger
+     */
     function let(CacheInterface $cache, LoggerInterface $logger)
     {
         $this->beConstructedWith($cache, $logger);
