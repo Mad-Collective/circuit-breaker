@@ -4,9 +4,9 @@ namespace Cmp\CircuitBreaker;
 
 use Cmp\CircuitBreaker\Exception\ServiceAlreadyTrackedException;
 use Cmp\CircuitBreaker\Exception\ServiceNotTrackedException;
+use Psr\Log\NullLogger;
 use Psr\SimpleCache\CacheInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /**
  * Class CircuitBreaker
@@ -15,16 +15,29 @@ use Psr\Log\NullLogger;
  */
 class CircuitBreaker
 {
+    /**
+     * @var CacheInterface
+     */
     protected $cache;
 
+    /**
+     * @var LoggerInterface
+     */
     protected $logger;
 
-    protected $timeFactory;
-
+    /**
+     * @var Service[]
+     */
     protected $services    = [];
 
+    /**
+     * @var string
+     */
     protected $cachePrefix = 'cb';
 
+    /**
+     * @var int
+     */
     protected $ttl         = 3360;
 
     /**
@@ -32,16 +45,13 @@ class CircuitBreaker
      *
      * @param CacheInterface       $cache       Cache to store the failures and times
      * @param LoggerInterface|null $logger      To log stuff
-     * @param TimeFactory|null     $timeFactory Time Factory to mock the class
      */
     public function __construct(
         CacheInterface $cache,
-        LoggerInterface $logger = null,
-        TimeFactory $timeFactory = null
+        LoggerInterface $logger
     ) {
         $this->cache       = $cache;
         $this->logger      = $logger instanceof LoggerInterface ? $logger : new NullLogger();
-        $this->timeFactory = $timeFactory instanceof TimeFactory ? $timeFactory : new TimeFactory();
     }
 
     /**
@@ -56,8 +66,7 @@ class CircuitBreaker
     }
 
     /**
-     * @param string $serviceName Name of the service
-     *
+     * @param $serviceName
      * @return Service|null
      */
     protected function getService($serviceName)
@@ -65,7 +74,6 @@ class CircuitBreaker
         if (array_key_exists($serviceName, $this->services)) {
             return $this->services[$serviceName];
         }
-
         return null;
     }
 
@@ -96,7 +104,7 @@ class CircuitBreaker
     protected function setFailures($serviceName, $newValue)
     {
         $this->cache->set($this->getCacheKey($serviceName, 'failures'), $newValue, $this->ttl);
-        $this->cache->set($this->getCacheKey($serviceName, 'lastTest'), $this->timeFactory->time(), $this->ttl);
+        $this->cache->set($this->getCacheKey($serviceName, 'lastTest'), time(), $this->ttl);
     }
 
     /**
@@ -135,7 +143,7 @@ class CircuitBreaker
         $lastTest     = $this->getLastTest($serviceName);
         $retryTimeout = $service->getRetryTimeout();
 
-        if (($lastTest + $retryTimeout) < $this->timeFactory->time()) {
+        if (($lastTest + $retryTimeout) < time()) {
             $this->setFailures($serviceName, $failures);
             $this->logger->info('Attempting service '.$serviceName.' one more time');
 
