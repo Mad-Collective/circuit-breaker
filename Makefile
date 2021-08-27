@@ -14,7 +14,7 @@ ifeq ($(IMAGES),true)
 	@docker rmi ${COMPONENT}_${CONTAINER}
 endif
 
-test: unit
+test: deps unit
 
 deps:
 	@composer install --no-interaction
