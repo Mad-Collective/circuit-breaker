@@ -15,6 +15,8 @@ use Psr\Log\LoggerInterface;
  */
 class CircuitBreaker
 {
+    const DEFAULT_TLL = 3360;
+
     /**
      * @var CacheInterface
      */
@@ -38,20 +40,23 @@ class CircuitBreaker
     /**
      * @var int
      */
-    protected $ttl         = 3360;
+    protected $ttl;
 
     /**
      * CircuitBreaker constructor.
      *
      * @param CacheInterface       $cache       Cache to store the failures and times
      * @param LoggerInterface|null $logger      To log stuff
+     * @param int                  $ttl         Expiration time of failures and latest keys
      */
     public function __construct(
         CacheInterface $cache,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        $ttl = self::DEFAULT_TLL
     ) {
         $this->cache       = $cache;
         $this->logger      = $logger instanceof LoggerInterface ? $logger : new NullLogger();
+        $this->ttl         = (int) $ttl;
     }
 
     /**
@@ -169,15 +174,20 @@ class CircuitBreaker
     }
 
     /**
-     * @param string $serviceName Name of the service
+     * @param string $serviceName            Name of the service
+     * @param bool   $decreaseFailureCounter Disable decrease failure counter
      *
      * @throws ServiceNotTrackedException
      */
-    public function reportSuccess($serviceName)
+    public function reportSuccess($serviceName, $decreaseFailureCounter = true)
     {
         $service = $this->getService($serviceName);
         if ($service == null) {
             throw new ServiceNotTrackedException($serviceName);
+        }
+
+        if(!$decreaseFailureCounter) {
+            return;
         }
 
         $failures    = $this->getFailures($serviceName);

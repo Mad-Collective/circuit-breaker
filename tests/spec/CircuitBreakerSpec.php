@@ -118,6 +118,17 @@ class CircuitBreakerSpec extends ObjectBehavior
         $this->trackService($service);
         $this->reportSuccess('test');
     }
+
+    function it_should_not_increase_the_failure_counter_if_disabled(CacheInterface $cache)
+    {
+        CircuitBreakerSpec::$time = 1000;
+        $cache->set('cb-test-failures', 18, 3360)->shouldNotBeCalled();
+        $service = new Service('test', 20, 60);
+        $this->trackService($service);
+        $this->reportSuccess('test', false);
+    }
+
+
 }
 
 
