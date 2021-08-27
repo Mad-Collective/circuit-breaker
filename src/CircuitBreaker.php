@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  */
 class CircuitBreaker
 {
-    const DEFAULT_TLL = 3360;
+    const DEFAULT_TTL = 3360;
 
     /**
      * @var CacheInterface
@@ -47,12 +47,12 @@ class CircuitBreaker
      *
      * @param CacheInterface       $cache       Cache to store the failures and times
      * @param LoggerInterface|null $logger      To log stuff
-     * @param int                  $ttl         Expiration time of failures and latest keys
+     * @param int                  $ttl         Expiration time of failures and lastTest keys
      */
     public function __construct(
         CacheInterface $cache,
         LoggerInterface $logger,
-        $ttl = self::DEFAULT_TLL
+        $ttl = self::DEFAULT_TTL
     ) {
         $this->cache       = $cache;
         $this->logger      = $logger instanceof LoggerInterface ? $logger : new NullLogger();
