@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  */
 class CircuitBreaker
 {
-    const DEFAULT_TTL = 3360;
+    const DEFAULT_TTL = 3600;
 
     /**
      * @var CacheInterface

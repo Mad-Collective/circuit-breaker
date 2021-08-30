@@ -27,8 +27,8 @@ composer require "pluggit/cache"
 ```php
 <?php
 
-$circuitBreaker = new \Cmp\CircuitBreaker\CircuitBreaker($mySimpleCache);
-$circuitBreaker->trackService(new \Cmp\CircuitBreaker\Service('payment.gateway'));
+$circuitBreaker = new \Cmp\CircuitBreaker\CircuitBreaker($mySimpleCache, $logger, $ttl);
+$circuitBreaker->trackService(new \Cmp\CircuitBreaker\Service('payment.gateway', $maxFailures, $retryTimeout));
 
 ...
 
@@ -42,4 +42,9 @@ if ( $circuitBreaker->isAvailable('payment.gateway') ) {
 } else {
     // Do something else
 }
+```
+Internally when a success is reported, a counter is decreased in order to verify the availability of the circuit breaker. 
+In case, you don't want to decrease the counter you can set the second parameter of `reportSuccess` method to false:
+```php
+$circuitBreaker->reportSuccess('payment.gateway', false)
 ```
