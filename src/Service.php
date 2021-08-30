@@ -15,18 +15,22 @@ class Service
 
     protected $retryTimeout;
 
+    protected $failuresWindow;
+
     /**
      * Service constructor.
      *
-     * @param string $name         Name of the service
-     * @param int    $maxFailures  Maximum numbers of allowed failures
-     * @param int    $retryTimeout Timeout to retry the service
+     * @param string $name              Name of the service
+     * @param int    $maxFailures       Maximum numbers of allowed failures
+     * @param int    $retryTimeout      Timeout to retry the service
+     * @param int    $failuresWindow    Number of seconds to report only failures. By default is disabled.
      */
-    public function __construct($name, $maxFailures = 20, $retryTimeout = 60)
+    public function __construct($name, $maxFailures = 20, $retryTimeout = 60, $failuresWindow = 0)
     {
         $this->setName($name);
         $this->maxFailures  = $maxFailures;
         $this->retryTimeout = $retryTimeout;
+        $this->failuresWindow = $failuresWindow;
     }
 
     /**
@@ -63,5 +67,13 @@ class Service
     public function getRetryTimeout()
     {
         return $this->retryTimeout;
+    }
+
+    /**
+     * @return int
+     */
+    public function getFailuresWindow()
+    {
+        return $this->failuresWindow;
     }
 }

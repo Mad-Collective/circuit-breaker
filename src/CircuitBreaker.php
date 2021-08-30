@@ -38,7 +38,7 @@ class CircuitBreaker
     /**
      * @var int
      */
-    protected $ttl         = 3360;
+    protected $ttl         = 3600;
 
     /**
      * CircuitBreaker constructor.
@@ -178,6 +178,13 @@ class CircuitBreaker
         $service = $this->getService($serviceName);
         if ($service == null) {
             throw new ServiceNotTrackedException($serviceName);
+        }
+
+        if($errorWindow = $service->getFailuresWindow()) {
+            $lastTest = $this->getLastTest($serviceName);
+            if (($lastTest + $errorWindow) > time()) {
+                return;
+            }
         }
 
         $failures    = $this->getFailures($serviceName);

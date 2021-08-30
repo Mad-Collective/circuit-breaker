@@ -43,3 +43,9 @@ if ( $circuitBreaker->isAvailable('payment.gateway') ) {
     // Do something else
 }
 ```
+In case you want to detect if a services fails intermittently, you can set a failure window in the Service class. 
+With this parameter, the circuit breaker won't be available if it had the max number of failures in a period of time.
+```php
+new \Cmp\CircuitBreaker\Service('payment.gateway', $maxFailures, $retryTimeout, $failuresWindow)
+```
+
